@@ -1,0 +1,11 @@
+vrserv
+===================
+
+Vrserv is a RPC server intended for use with a captive portal.
+It is written in Python.
+
+Authors:
+ Joonas Kortesalmi
+ Ilkka Mattila
+ (others)
+
