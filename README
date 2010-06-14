@@ -2,7 +2,7 @@ vrserv
 ===================
 
 Vrserv is a RPC server intended for use with a captive portal.
-It is written in Python.
+This branch is a legacy perl version of the same software.
 
 Authors:
  Joonas Kortesalmi

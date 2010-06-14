@@ -1,0 +1,40 @@
+## vrauth
+
+# These lines should be inserted at the bottom of the existing firewall script
+
+#http<->vrauth  (vrserv.pl listens to port 31008 by default)
+$IPT -A INPUT -p tcp --dport 31008 -s 192.168.1.2 -d 192.168.1.1 -m state --state NEW -j ACCEPT
+
+# before login
+# nat to external IP  (you can also replace this with MASQUERADE if you wish)
+$IPT -t nat -A POSTROUTING -s $WLAN -o ${EXT_IF} -j SNAT --to-source ${EXT_IP}
+
+# Allow these without logging in
+$IPT -A PREROUTING -t nat -i ${WLAN_IF} -d 192.168.1.2 -p tcp --dport 53 -j ACCEPT
+$IPT -A PREROUTING -t nat -i ${WLAN_IF} -d 192.168.1.2 -p udp --dport 53 -j ACCEPT
+$IPT -A PREROUTING -t nat -i ${WLAN_IF} -d 192.168.1.2 -p tcp --dport 443 -j ACCEPT
+$IPT -A PREROUTING -t nat -i ${WLAN_IF} -d 192.168.1.2 -p tcp --dport 8000 -j ACCEPT
+
+$IPT -N vrauth -t nat
+# Allow those logged in already in PREROUTING
+$IPT -A PREROUTING -t nat -i ${WLAN_IF} -j vrauth
+# And redirect the rest to login page
+$IPT -A PREROUTING -t nat -i ${WLAN_IF} -p tcp --dport 80 -j DNAT --to 192.168.1.2:8001
+$IPT -A PREROUTING -t nat -i ${WLAN_IF} -j DROP
+
+
+$IPT -N vrauth
+# Allow these before logging in
+$IPT -A FORWARD -i ${WLAN_IF} -d 192.168.1.2 -p tcp --dport 53 -j ACCEPT
+$IPT -A FORWARD -i ${WLAN_IF} -d 192.168.1.2 -p udp --dport 53 -j ACCEPT
+$IPT -A FORWARD -i ${WLAN_IF} -d 192.168.1.2 -p tcp --dport 443 -j ACCEPT
+$IPT -A FORWARD -i ${WLAN_IF} -d 192.168.1.2 -p tcp --dport 8001 -j ACCEPT
+
+# And these after login
+#class 1
+$IPT -A FORWARD -i ${WLAN_IF} -o ${EXT_IF} -j vrauth
+$IPT -A FORWARD -i ${WLAN_IF} -o ${DMZ_IF} -s ${WLAN} -d ${DMZ} -j vrauth
+
+# Drop the rest
+$IPT -A FORWARD -i ${WLAN_IF} -j DROP
+
